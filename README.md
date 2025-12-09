@@ -77,26 +77,26 @@ src/
 
 Asteroids use custom geometry logic:
 
-```ts
 const geometry = new THREE.DodecahedronGeometry(1, 1);
 // Modify vertices to create irregular rock-like shapes
 
-⚙️ Physics Interactions
+### ⚙️ Physics Interactions
 
-Each asteroid stores velocity in a useRef object
-
-Clicking applies force + angular momentum
-
+Each asteroid stores velocity in a useRef object  
+Clicking applies force + angular momentum  
 Movement decays naturally over time
 
-💻 Run Locally
-Prerequisites
+---
 
-Node.js 16+
+## 💻 Run Locally
 
-npm or yarn
+### Prerequisites
 
-Steps
+- Node.js 16+
+- npm or yarn
+
+### Steps
+
 git clone https://github.com/your-username/your-repo-name.git
 cd your-repo-name
 npm install
@@ -104,13 +104,16 @@ npm run dev
 
 Visit in browser: http://localhost:5173
 
-🎨 Customization
+---
 
-Update personal details & project info: src/constants/index.ts
+## 🎨 Customization
 
-Modify starfield speed, warp duration, asteroid spawn rate: src/components/Background3D.tsx
+- Update personal details & project info: src/constants/index.ts
+- Modify starfield speed, warp duration, asteroid spawn rate: src/components/Background3D.tsx
 
-🚀 Deployment
+---
+
+## 🚀 Deployment
 
 This project is optimized for Netlify, Vercel, and similar hosting providers.
 
@@ -118,25 +121,14 @@ Build for production:
 
 npm run build
 
-
 Upload the dist directory or connect your GitHub repo for auto-deploy.
-
-📄 License
-
-Distributed under the MIT License.
-
-Built with ❤️ by Rahul Matta
-
 
 ---
 
-If you want, I can also:
+## 📄 License
 
-✅ generate badges (Tech stack, License, Build)
-✅ add screenshots / GIF previews
-✅ create a polished GitHub profile-style README
+Distributed under the MIT License.
 
-Just tell me!
+---
 
-
-```
+Built with ❤️ by Rahul Matta
