@@ -51,15 +51,15 @@ Framer Motion brings sections and elements to life with subtle scroll-based anim
 
 src/
 ├── components/
-│ ├── Background3D.tsx # Stars, Asteroids, Warp logic
-│ ├── WarpContext.tsx # Warp state manager
-│ ├── Navbar.tsx # Top navigation bar
-│ ├── Hero.tsx # Intro section + 3D Resume
-│ ├── Projects.tsx # Portfolio projects section
+│ ├── Background3D.tsx # Core 3D logic (Stars, Asteroids, Warp)
+│ ├── WarpContext.tsx # Global warp state manager
+│ ├── Navbar.tsx # Navigation that triggers warp effect
+│ ├── Hero.tsx # Landing section + 3D Resume button
+│ ├── Projects.tsx # Project showcase
 │ ├── Experience.tsx # Work experience timeline
-│ └── Contact.tsx # Contact form + footer
+│ └── Contact.tsx # Contact section + footer
 ├── constants/
-│ └── index.ts # Text, links, and data configs
+│ └── index.ts # Config for text, links, and data
 └── App.tsx # Main entry point
 
 ---
