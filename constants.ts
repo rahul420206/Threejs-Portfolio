@@ -12,7 +12,7 @@ export const PERSONAL_INFO = {
     { name: "GitHub", icon: Github, url: "https://github.com/rahul420206" },
     { name: "LinkedIn", icon: Linkedin, url: "https://linkedin.com/in/rahul-matta-a42585200/" },
     { name: "Email", icon: Mail, url: "mailto:420206@student.nitandhra.ac.in" },
-    { name: "Resume", icon: FileText, url: "#resume" }, // Placeholder for actual resume link
+    { name: "Resume", icon: FileText, url: "https://drive.google.com/file/d/1ytg8Qm2kMZ2_iNlhw0-3m_Po19yupGB5/view" }, // Placeholder for actual resume link
   ]
 };
 

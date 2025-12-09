@@ -42,7 +42,7 @@ const Contact = () => {
           <p>© {new Date().getFullYear()} Rahul Matta. Built with React & Three.js.</p>
           <div className="flex gap-6 mt-4 md:mt-0">
              {PERSONAL_INFO.social.map(s => (
-               <a key={s.name} href={s.url} className="hover:text-primary transition-colors">{s.name}</a>
+               <a key={s.name} href={s.url} target="_blank" className="hover:text-primary transition-colors">{s.name}</a>
              ))}
           </div>
         </footer>
