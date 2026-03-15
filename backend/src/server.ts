@@ -1,0 +1,105 @@
+import express from 'express';
+import cors from 'cors';
+import session from 'express-session';
+import { AIProjectClient } from '@azure/ai-projects';
+import { DefaultAzureCredential } from '@azure/identity';
+import dotenv from 'dotenv';
+
+declare module 'express-session' {
+  interface SessionData {
+    threadId?: string;
+  }
+}
+
+dotenv.config();
+
+const app = express();
+const port = process.env.PORT || 5000;
+
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  credentials: true,
+}));
+app.use(express.json());
+
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET!,
+    resave: false,
+    saveUninitialized: false,
+    cookie: { maxAge: 24 * 60 * 60 * 1000, httpOnly: true },
+  })
+);
+
+const project = new AIProjectClient(
+  process.env.PROJECT_ENDPOINT!,
+  new DefaultAzureCredential()
+);
+
+const agentId = process.env.AGENT_ID!;
+
+// Get or create thread per user session
+app.get('/api/thread', async (req, res) => {
+  if (!req.session.threadId) {
+    const thread = await project.agents.threads.create();
+    req.session.threadId = thread.id;
+    console.log('Created new thread:', thread.id);
+  }
+  res.json({ threadId: req.session.threadId });
+});
+
+// Main chat endpoint
+app.post('/api/chat', async (req, res) => {
+  const { message } = req.body;
+  let threadId = req.session.threadId;
+
+  if (!threadId) {
+    const thread = await project.agents.threads.create();
+    threadId = thread.id;
+    req.session.threadId = threadId;
+    console.log('Auto-created thread:', threadId);
+  }
+
+  if (!message) {
+    return res.status(400).json({ error: 'Missing message' });
+  }
+
+
+  try {
+    // Add user message
+    await project.agents.messages.create(threadId, 'user', message);
+
+    // Create & run
+    let run = await project.agents.runs.create(threadId, agentId);
+
+    // Poll until terminal state
+    while (run.status === 'queued' || run.status === 'in_progress') {
+      await new Promise((r) => setTimeout(r, 1000));
+      run = await project.agents.runs.get(threadId, run.id);
+    }
+
+    if (run.status === 'failed') {
+      return res.status(500).json({ error: run.lastError?.message || 'Run failed' });
+    }
+
+    // Get latest messages (last one should be assistant)
+    const messagesIter = await project.agents.messages.list(threadId, { order: 'desc', limit: 1 });
+    const messagesArr: any[] = [];
+    for await (const msg of messagesIter) {
+      messagesArr.push(msg);
+    }
+    const assistantMsg = messagesArr.find(m => m.role === 'assistant');
+
+    const content = assistantMsg?.content.find((c: { type: string }) => c.type === 'text');
+    const text = content ? (content as any).text.value : 'No response';
+
+    res.json({ response: text });
+  } catch (err: any) {
+    console.error(err);
+    res.status(500).json({ error: err.message || 'Server error' });
+  }
+});
+
+app.listen(port, () => {
+  console.log(`Backend running on http://localhost:${port}`);
+});
