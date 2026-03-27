@@ -1,2 +1,3 @@
+# Replace <your-backend-app-name> with your actual Azure App Service name after deployment
 /api/*  https://<your-backend-app-name>.azurewebsites.net/api/:splat  200
 /* /index.html 200
