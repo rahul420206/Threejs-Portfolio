@@ -118,6 +118,12 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
+// Global error handler (catches JSON parse errors etc.)
+app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  console.error('Unhandled error:', err.message);
+  res.status(err.status || 500).json({ error: err.message || 'Internal server error' });
+});
+
 app.listen(port, () => {
   console.log(`Backend running on http://localhost:${port}`);
 });
