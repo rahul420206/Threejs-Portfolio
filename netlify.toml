@@ -2,10 +2,9 @@
   command = "npm run build"
   publish = "dist"
 
-# Proxy /api/* requests to your Azure backend
-# Replace <your-backend-app-name> with your actual Azure App Service name
+# Proxy /api/* requests to Azure backend
 [[redirects]]
   from = "/api/*"
-  to = "https://<your-backend-app-name>.azurewebsites.net/api/:splat"
+  to = "https://rahul-portfolio-backend.azurewebsites.net/api/:splat"
   status = 200
   force = true
