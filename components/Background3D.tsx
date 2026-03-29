@@ -233,7 +233,7 @@ const AsteroidManager = () => {
 };
 
 // ==========================================
-// 5. STAR FIELD (Unchanged)
+// 5. STAR FIELD
 // ==========================================
 const StarField = (props: any) => {
   const ref = useRef<THREE.Points>(null);
@@ -241,32 +241,48 @@ const StarField = (props: any) => {
   const { isWarping } = useWarp();
   const speedRef = useRef(0);
   const colorRef = useRef(new THREE.Color("white"));
+  const wasWarping = useRef(false);
 
   const count = 5000;
-  const [positions, initialColors] = useMemo(() => {
+  const SPHERE_R_MIN = 20;
+  const SPHERE_R_MAX = 45;
+
+  // Generate initial spherical positions
+  const [positions, initialPositions, initialColors] = useMemo(() => {
     const posArray = new Float32Array(count * 3);
+    const initPosArray = new Float32Array(count * 3);
     const colArray = new Float32Array(count * 3);
     for (let i = 0; i < count; i++) {
       const theta = 2 * Math.PI * Math.random();
       const phi = Math.acos(2 * Math.random() - 1);
-      const r = 20 + Math.random() * 25;
-      posArray[i * 3] = r * Math.sin(phi) * Math.cos(theta);
-      posArray[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
-      posArray[i * 3 + 2] = r * Math.cos(phi);
+      const r = SPHERE_R_MIN + Math.random() * (SPHERE_R_MAX - SPHERE_R_MIN);
+      const x = r * Math.sin(phi) * Math.cos(theta);
+      const y = r * Math.sin(phi) * Math.sin(theta);
+      const z = r * Math.cos(phi);
+      posArray[i * 3] = x;
+      posArray[i * 3 + 1] = y;
+      posArray[i * 3 + 2] = z;
+      // Store original positions for reset
+      initPosArray[i * 3] = x;
+      initPosArray[i * 3 + 1] = y;
+      initPosArray[i * 3 + 2] = z;
       colArray[i * 3] = 1; colArray[i * 3 + 1] = 1; colArray[i * 3 + 2] = 1;
     }
-    return [posArray, colArray];
+    return [posArray, initPosArray, colArray];
   }, []);
 
   useFrame((state, delta) => {
     if (!ref.current) return;
     
+    // Gentle ambient rotation
     ref.current.rotation.x -= ROTATION_SPEED_X;
     ref.current.rotation.y -= ROTATION_SPEED_Y;
 
-    const targetSpeed = isWarping ? 50.0 : 0; 
-    speedRef.current = THREE.MathUtils.lerp(speedRef.current, targetSpeed, 0.05);
+    // Smooth speed transition
+    const targetSpeed = isWarping ? 80.0 : 0; 
+    speedRef.current = THREE.MathUtils.lerp(speedRef.current, targetSpeed, isWarping ? 0.08 : 0.03);
 
+    // Smooth color transition
     const targetColor = isWarping ? new THREE.Color("#00ffff") : new THREE.Color("#ffffff");
     colorRef.current.lerp(targetColor, 0.05);
     
@@ -275,19 +291,57 @@ const StarField = (props: any) => {
         (ref.current.material as THREE.PointsMaterial).color.copy(colorRef.current);
     }
 
+    const posArr = ref.current.geometry.attributes.position.array as Float32Array;
+
+    // During warp: move stars toward the camera (positive Z) and recycle them behind
     if (speedRef.current > 0.1) {
-        const positions = ref.current.geometry.attributes.position.array as Float32Array;
         for (let i = 0; i < count; i++) {
-            positions[i * 3 + 2] += speedRef.current * delta;
-            if (positions[i * 3 + 2] > -1) {
-                positions[i * 3 + 2] = -50; 
-                positions[i * 3] = (Math.random() - 0.5) * 400; 
-                positions[i * 3 + 1] = (Math.random() - 0.5) * 400; 
+            const ix = i * 3;
+            const iy = i * 3 + 1;
+            const iz = i * 3 + 2;
+
+            // Move star toward camera along Z
+            posArr[iz] += speedRef.current * delta;
+
+            // When star passes the camera, respawn it far behind with
+            // a spread that matches a cylindrical tunnel (not a flat plane)
+            if (posArr[iz] > 10) {
+                const angle = Math.random() * Math.PI * 2;
+                const radius = 2 + Math.random() * 40;
+                posArr[ix] = Math.cos(angle) * radius;
+                posArr[iy] = Math.sin(angle) * radius;
+                posArr[iz] = -40 - Math.random() * 20;
             }
         }
         ref.current.geometry.attributes.position.needsUpdate = true;
+        wasWarping.current = true;
+    }
+    // After warp ends: smoothly restore stars to their original spherical positions
+    else if (wasWarping.current) {
+        let restored = 0;
+        for (let i = 0; i < count; i++) {
+            const ix = i * 3;
+            const iy = i * 3 + 1;
+            const iz = i * 3 + 2;
+            
+            posArr[ix] = THREE.MathUtils.lerp(posArr[ix], initialPositions[ix], 0.02);
+            posArr[iy] = THREE.MathUtils.lerp(posArr[iy], initialPositions[iy], 0.02);
+            posArr[iz] = THREE.MathUtils.lerp(posArr[iz], initialPositions[iz], 0.02);
+
+            // Check if star is close enough to its original position
+            const dx = posArr[ix] - initialPositions[ix];
+            const dy = posArr[iy] - initialPositions[iy];
+            const dz = posArr[iz] - initialPositions[iz];
+            if (dx * dx + dy * dy + dz * dz < 0.5) restored++;
+        }
+        ref.current.geometry.attributes.position.needsUpdate = true;
+        // Once most stars are back, stop updating
+        if (restored > count * 0.95) {
+            wasWarping.current = false;
+        }
     }
 
+    // Mouse parallax (only when not warping)
     if (!isWarping) {
         const x = (mouse.x * viewport.width) / 50;
         const y = (mouse.y * viewport.height) / 50;
@@ -297,12 +351,12 @@ const StarField = (props: any) => {
   });
 
   return (
-    <group rotation={[0, 0, Math.PI / 4]}>
+    <group>
       <Points ref={ref} positions={positions} colors={initialColors} stride={3} frustumCulled={false}>
         <PointMaterial
           transparent
           color="#ffffff" 
-          size={0.1}
+          size={0.08}
           sizeAttenuation={true}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
